@@ -4,6 +4,7 @@ public class Program
 {
     public static void Main()
     {
-        Solver.RunSolutions();
+        var runExample = false;
+        Solver.RunSolutions(runExample);
     }
 }
