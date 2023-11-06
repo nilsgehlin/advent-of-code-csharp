@@ -1,12 +1,22 @@
-﻿namespace AdventOfCode;
+﻿namespace AdventOfCode.Solver;
 
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+
+public enum SolutionResult
+{
+    Correct,
+    Wrong,
+    CorrectAnswerNotAvailable,
+}
 
 public class SolutionMethod
 {
+    private const string DataDir = "../../data";
+
     public SolutionMethod(int year, int day, int part, MethodInfo method)
     {
         Year = year;
@@ -31,6 +41,18 @@ public class SolutionMethod
         return result;
     }
 
+    public SolutionResult CheckAnswer(string answer)
+    {
+        var correctAnswerFilePath = $"{DataDir}/{Year}/Day{Day}.out";
+        if (!File.Exists(correctAnswerFilePath))
+        {
+            return SolutionResult.CorrectAnswerNotAvailable;
+        }
+
+        var correctAnswer = File.ReadAllText(correctAnswerFilePath);
+        return answer == correctAnswer ? SolutionResult.Correct : SolutionResult.Wrong;
+    }
+
     private static string GetInput(int year, int day, bool runExample)
     {
         var extension = runExample ? "example" : "in";
@@ -40,12 +62,13 @@ public class SolutionMethod
 
 public static class Solver
 {
-    private const string DataDir = "../../data";
-
     public static void RunSolutions(int? year, int? day, int? part, bool runExample)
     {
         Assembly.GetExecutingAssembly().GetTypes()
-            .FindSolutionsToRun(year, day, part)
+            .FindAllSolutions()
+            .Where(s => year is null || s.Year == year )
+            .Where(s => day is null || s.Day == day )
+            .Where(s => part is null || s.Part == part )
             .EvaluateSolutions(runExample);
     }
 
@@ -53,9 +76,9 @@ public static class Solver
     {
         foreach (var solution in solutions)
         {
-            string result = RunSolutionMethod(runExample, solution);
+            string answer = solution.Run(runExample);
 
-            Console.Write($"{solution.Year}, Day {solution.Day}, Part {solution.Part}: {result} ");
+            Console.Write($"{solution.Year}, Day {solution.Day}, Part {solution.Part}: {answer} ");
 
             if (runExample)
             {
@@ -63,21 +86,18 @@ public static class Solver
                 continue;
             }
 
-            var answerFilePath = $"{DataDir}/{solution.Year}/Day{solution.Day}.out";
-            if (!File.Exists(answerFilePath))
+            var result = solution.CheckAnswer(answer);
+            switch (result)
             {
-                Console.WriteLine("??");
-                continue;
-            }
-
-            var answer = File.ReadAllText(answerFilePath);
-            if (answer == result)
-            {
-                WriteLineWithColor("+", ConsoleColor.Green);
-            }
-            else
-            {
-                WriteLineWithColor("-", ConsoleColor.Red);
+                case SolutionResult.Correct:
+                    WriteLineWithColor("+", ConsoleColor.Green);
+                    break;
+                case SolutionResult.Wrong:
+                    WriteLineWithColor("-", ConsoleColor.Red);
+                    break;
+                case SolutionResult.CorrectAnswerNotAvailable:
+                    Console.WriteLine("??");
+                    break;
             }
         }
     }
@@ -89,29 +109,13 @@ public static class Solver
         Console.ResetColor();
     }
 
-
-    private static IEnumerable<SolutionMethod> FindSolutionsToRun(
-        this IEnumerable<Type> types,
-        int? year,
-        int? day,
-        int? part)
+    private static IEnumerable<SolutionMethod> FindAllSolutions(this IEnumerable<Type> types)
     {
         var assemblyTypes = Assembly.GetExecutingAssembly().GetTypes();
-
         foreach (var assemblyType in assemblyTypes)
         {
             var solutionAttr = assemblyType.GetCustomAttribute<SolutionAttribute>();
             if (solutionAttr is null)
-            {
-                continue;
-            }
-
-            if (year is not null && year != solutionAttr.Year)
-            {
-                continue;
-            }
-
-            if (day is not null && day != solutionAttr.Day)
             {
                 continue;
             }
@@ -121,11 +125,6 @@ public static class Solver
             {
                 var partAttribute = method.GetCustomAttribute<PartAttribute>();
                 if (partAttribute is null)
-                {
-                    continue;
-                }
-
-                if (part is not null && part != partAttribute.Part)
                 {
                     continue;
                 }
