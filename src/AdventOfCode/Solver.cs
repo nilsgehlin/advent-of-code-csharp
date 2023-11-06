@@ -12,94 +12,76 @@ public static class Solver
 {
     private const string DataDir = "../../data";
 
-    // public static void RunSolutions(int? year, int? day, int? part, bool runExample) =>
-    //     Assembly.GetExecutingAssembly().GetTypes()
-    //         .Where(IsSolution)
-    //         .Where(t => CorrectYear(t, year))
-    //         .Where(t => CorrectDay(t, day))
-    //         .ToList().ForEach(t => RunSolution(t, part, runExample));
-
     public static void RunSolutions(int? year, int? day, int? part, bool runExample)
     {
-        Assembly.GetExecutingAssembly()
-            .GetTypes()
-            .SelectMany(t => t.GetMethods())
-            .RunIfSolution(runExample);
-    }
+        var assemblyTypes = Assembly.GetExecutingAssembly().GetTypes();
 
-    private static IEnumerable<Solution> RunIfSolution(this IEnumerable<MethodInfo> assemblyMethods, bool runExample)
-    {
-        foreach (var method in assemblyMethods)
+        foreach (var assemblyType in assemblyTypes)
         {
-            var solution = method.GetCustomAttribute<SolutionAttribute>();
-            if (solution is not null)
+            var solutionAttr = assemblyType.GetCustomAttribute<SolutionAttribute>();
+            if (solutionAttr is null)
             {
-                var result = (string?)method.Invoke(null, new object[] { GetInput(solution.Year, solution.Day, runExample) });
-                EvaluateResult(year, day, part, result);
+                continue;
             }
 
-        }
-    }
-
-
-    private static bool IsSolution(Type t) => t.GetCustomAttribute<SolutionAttribute>() is not null;
-
-    private static bool CorrectYear(Type t, int? year)
-    {
-        if (year is null)
-        {
-            return true;
-        }
-
-        var attr = t.GetCustomAttribute<SolutionAttribute>();
-
-        return attr!.Year == year;
-    }
-
-    private static bool CorrectDay(Type t, int? day)
-    {
-        if (day is null)
-        {
-            return true;
-        }
-
-        var attr = t.GetCustomAttribute<SolutionAttribute>();
-
-        return attr!.Day == day;
-    }
-
-    private static string GetInput(int year, int day, bool runExample)
-    {
-        var extension = runExample ? "example" : "in";
-        return File.ReadAllText($"{DataDir}/{year}/Day{day}.{extension}");
-    }
-
-    private static void EvaluateResult(int year, int day, int part, string? result)
-    {
-        Console.WriteLine(result);
-        return;
-    }
-
-    private static void RunSolution(Type solution, int year, int day, int? part, bool runExample)
-    {
-        var solutionInfo = solution.GetCustomAttribute<SolutionAttribute>();
-        year ??= solutionInfo!.Year;
-        day ??= solutionInfo!.Day;
-
-        var methods = solution.GetMethods();
-
-        foreach (var method in methods)
-        {
-            var partAttribute = method.GetCustomAttribute<PartAttribute>();
-            if (partAttribute is null)
+            if (year is not null && year != solutionAttr.Year)
             {
-                return;
+                continue;
             }
 
-            var part = partAttribute.Part;
+            if (day is not null && day != solutionAttr.Day)
+            {
+                continue;
+            }
 
-            var result = (string?)method.Invoke(null, new object[] { GetInput(year, day, runExample) });
-            EvaluateResult(year, day, part, result);
+            var methods = assemblyType.GetMethods();
+            foreach (var method in methods)
+            {
+                var partAttribute = method.GetCustomAttribute<PartAttribute>();
+                if (partAttribute is null)
+                {
+                    continue;
+                }
+
+                if (part is not null && part != partAttribute.Part)
+                {
+                    continue;
+                }
+
+                var extension = runExample ? "example" : "in";
+                var input = File.ReadAllText($"{DataDir}/{solutionAttr.Year}/Day{solutionAttr.Day}.{extension}");
+                var args = new string[] { input };
+                var result = (string?)method.Invoke(null, args);
+
+                Console.Write($"{solutionAttr.Year}, Day {solutionAttr.Day}, Part {partAttribute.Part}: {result} ");
+
+                if (runExample)
+                {
+                    Console.WriteLine();
+                    continue;
+                }
+
+                var answerFilePath = $"{DataDir}/{solutionAttr.Year}/Day{solutionAttr.Day}.out";
+                if (!File.Exists(answerFilePath))
+                {
+                    Console.WriteLine("??");
+                    continue;
+                }
+
+                var answer = File.ReadAllText(answerFilePath);
+                if (answer == result)
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine("+");
+                    Console.ResetColor();
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("-");
+                    Console.ResetColor();
+                }
+            }
         }
     }
 }
