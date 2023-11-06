@@ -2,6 +2,7 @@ namespace AdventOfCode;
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 public class SolutionMethod
@@ -32,16 +33,23 @@ public class SolutionMethod
         return result;
     }
 
-    public SolutionResult CheckAnswer(string answer)
+    public (SolutionResult result, string? correctAnswer) CheckAnswer(string answer)
     {
         var correctAnswerFilePath = $"{DataDir}/{Year}/Day{Day}.out";
         if (!File.Exists(correctAnswerFilePath))
         {
-            return SolutionResult.CorrectAnswerNotAvailable;
+            return (SolutionResult.CorrectAnswerNotAvailable, null);
         }
 
-        var correctAnswer = File.ReadAllText(correctAnswerFilePath);
-        return answer == correctAnswer ? SolutionResult.Correct : SolutionResult.Wrong;
+        var correctAnswers = File.ReadAllText(correctAnswerFilePath).Split(Environment.NewLine);
+        if (correctAnswers.Length < Part)
+        {
+            return (SolutionResult.CorrectAnswerNotAvailable, null);
+        }
+
+        var correctAnswer = correctAnswers[Part - 1];
+        var result = answer == correctAnswer ? SolutionResult.Correct : SolutionResult.Wrong;
+        return (result, correctAnswer);
     }
 
     private static string GetInput(int year, int day, bool runExample)

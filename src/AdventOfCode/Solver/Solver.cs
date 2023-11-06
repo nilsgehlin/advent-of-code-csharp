@@ -11,9 +11,9 @@ public static class Solver
     {
         Assembly.GetExecutingAssembly().GetTypes()
             .FindAllSolutions()
-            .Where(s => year is null || s.Year == year )
-            .Where(s => day is null || s.Day == day )
-            .Where(s => part is null || s.Part == part )
+            .Where(s => year is null || s.Year == year)
+            .Where(s => day is null || s.Day == day)
+            .Where(s => part is null || s.Part == part)
             .EvaluateSolutions(runExample);
     }
 
@@ -23,34 +23,36 @@ public static class Solver
         {
             string answer = solution.Run(runExample);
 
-            Console.Write($"{solution.Year}, Day {solution.Day}, Part {solution.Part}: {answer} ");
+            Console.Write($"{solution.Year}, Day {solution.Day}, Part {solution.Part}: ");
 
             if (runExample)
             {
-                Console.WriteLine();
+                Console.WriteLine(answer);
                 continue;
             }
 
-            var result = solution.CheckAnswer(answer);
+            var (result, correctAnswer) = solution.CheckAnswer(answer);
             switch (result)
             {
                 case SolutionResult.Correct:
-                    WriteLineWithColor("+", ConsoleColor.Green);
+                    WriteWithColor($"{answer} +", ConsoleColor.Green);
+                    Console.WriteLine();
                     break;
                 case SolutionResult.Wrong:
-                    WriteLineWithColor("-", ConsoleColor.Red);
+                    WriteWithColor($"{answer} -", ConsoleColor.Red);
+                    Console.WriteLine($" ({correctAnswer})");
                     break;
                 case SolutionResult.CorrectAnswerNotAvailable:
-                    Console.WriteLine("??");
+                    Console.WriteLine($"{answer} ??");
                     break;
             }
         }
     }
 
-    private static void WriteLineWithColor(string value, ConsoleColor color)
+    private static void WriteWithColor(string value, ConsoleColor color)
     {
         Console.ForegroundColor = color;
-        Console.WriteLine(value);
+        Console.Write(value);
         Console.ResetColor();
     }
 

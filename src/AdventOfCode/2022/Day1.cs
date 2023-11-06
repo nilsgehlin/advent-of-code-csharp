@@ -6,12 +6,13 @@ public class Day1
     [Part(1)]
     public static string SolvePartOne(string input)
     {
-        return "correct";
+        return "this is day1 part 1 correct answer";
+;
     }
 
     [Part(2)]
     public static string SolvePartTwo(string input)
     {
-        return "wrong";
+        return "this is day1 part 2 correct answer";
     }
 }
