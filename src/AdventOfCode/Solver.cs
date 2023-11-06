@@ -3,10 +3,40 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 
-public record Solution(int Year, int Day, int Part, MethodInfo Method);
+public class SolutionMethod
+{
+    public SolutionMethod(int year, int day, int part, MethodInfo method)
+    {
+        Year = year;
+        Day = day;
+        Part = part;
+        Method = method;
+    }
+
+    public int Year { get; }
+
+    public int Day { get; }
+
+    public int Part { get; }
+
+    public MethodInfo Method { get; }
+
+    public string Run(bool runExample)
+    {
+        var args = new string[] { GetInput(Year, Day, runExample) };
+        var result = (string?)Method.Invoke(null, args) ??
+            throw new Exception("Solution returned null, which is not legal");
+        return result;
+    }
+
+    private static string GetInput(int year, int day, bool runExample)
+    {
+        var extension = runExample ? "example" : "in";
+        return File.ReadAllText($"{DataDir}/{year}/Day{day}.{extension}");
+    }
+}
 
 public static class Solver
 {
@@ -14,16 +44,16 @@ public static class Solver
 
     public static void RunSolutions(int? year, int? day, int? part, bool runExample)
     {
-        var solutions = Assembly.GetExecutingAssembly()
-            .GetTypes()
-            .FindSolutionsToRun(year, day, part);
+        Assembly.GetExecutingAssembly().GetTypes()
+            .FindSolutionsToRun(year, day, part)
+            .EvaluateSolutions(runExample);
+    }
 
+    private static void EvaluateSolutions(this IEnumerable<SolutionMethod> solutions, bool runExample)
+    {
         foreach (var solution in solutions)
         {
-            var extension = runExample ? "example" : "in";
-            var input = File.ReadAllText($"{DataDir}/{solution.Year}/Day{solution.Day}.{extension}");
-            var args = new string[] { input };
-            var result = (string?)solution.Method.Invoke(null, args);
+            string result = RunSolutionMethod(runExample, solution);
 
             Console.Write($"{solution.Year}, Day {solution.Day}, Part {solution.Part}: {result} ");
 
@@ -43,20 +73,24 @@ public static class Solver
             var answer = File.ReadAllText(answerFilePath);
             if (answer == result)
             {
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("+");
-                Console.ResetColor();
+                WriteLineWithColor("+", ConsoleColor.Green);
             }
             else
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("-");
-                Console.ResetColor();
+                WriteLineWithColor("-", ConsoleColor.Red);
             }
         }
     }
 
-    private static IEnumerable<Solution> FindSolutionsToRun(
+    private static void WriteLineWithColor(string value, ConsoleColor color)
+    {
+        Console.ForegroundColor = color;
+        Console.WriteLine(value);
+        Console.ResetColor();
+    }
+
+
+    private static IEnumerable<SolutionMethod> FindSolutionsToRun(
         this IEnumerable<Type> types,
         int? year,
         int? day,
@@ -96,9 +130,10 @@ public static class Solver
                     continue;
                 }
 
-                yield return new Solution(
+                yield return new SolutionMethod(
                     solutionAttr.Year, solutionAttr.Day, partAttribute.Part, method);
             }
         }
     }
+
 }
