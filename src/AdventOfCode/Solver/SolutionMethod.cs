@@ -1,8 +1,7 @@
-namespace AdventOfCode;
+namespace AdventOfCode.Solver;
 
 using System;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 
 public class SolutionMethod

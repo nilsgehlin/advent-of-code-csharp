@@ -1,9 +1,10 @@
-﻿namespace AdventOfCode;
-
+﻿using AdventOfCode.Lib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+
+namespace AdventOfCode.Solver;
 
 public static class Solver
 {
@@ -56,9 +57,8 @@ public static class Solver
         Console.ResetColor();
     }
 
-    private static IEnumerable<SolutionMethod> FindAllSolutions(this IEnumerable<Type> types)
+    private static IEnumerable<SolutionMethod> FindAllSolutions(this IEnumerable<Type> assemblyTypes)
     {
-        var assemblyTypes = Assembly.GetExecutingAssembly().GetTypes();
         foreach (var assemblyType in assemblyTypes)
         {
             var solutionAttr = assemblyType.GetCustomAttribute<SolutionAttribute>();

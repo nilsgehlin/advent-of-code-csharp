@@ -1,4 +1,4 @@
-namespace AdventOfCode;
+namespace AdventOfCode.Solver;
 
 public enum SolutionResult
 {

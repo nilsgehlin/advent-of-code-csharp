@@ -1,9 +1,7 @@
-﻿namespace AdventOfCode;
-
-using System;
-using System.CommandLine;
-using System.Text;
+﻿using System.CommandLine;
 using System.Threading.Tasks;
+
+namespace AdventOfCode;
 
 public class Program
 {
@@ -39,11 +37,12 @@ public class Program
         rootCommand.AddOption(partOption);
         rootCommand.AddOption(runExampleOption);
 
-        rootCommand.SetHandler((year, day, part, runExample) =>
-        {
-            Solver.RunSolutions(year, day, part, runExample);
-        },
-        yearOption, dayOption, partOption, runExampleOption);
+        rootCommand.SetHandler(
+            Solver.Solver.RunSolutions,
+            yearOption,
+            dayOption,
+            partOption,
+            runExampleOption);
 
         await rootCommand.InvokeAsync(args);
     }
