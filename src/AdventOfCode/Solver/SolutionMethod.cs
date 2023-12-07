@@ -4,31 +4,23 @@ using System;
 using System.IO;
 using System.Reflection;
 
-public class SolutionMethod
+public class SolutionMethod(int year, int day, int part, MethodInfo method)
 {
     private const string DataDir = "../../data";
 
-    public SolutionMethod(int year, int day, int part, MethodInfo method)
-    {
-        Year = year;
-        Day = day;
-        Part = part;
-        Method = method;
-    }
+    public int Year { get; } = year;
 
-    public int Year { get; }
+    public int Day { get; } = day;
 
-    public int Day { get; }
+    public int Part { get; } = part;
 
-    public int Part { get; }
-
-    public MethodInfo Method { get; }
+    public MethodInfo Method { get; } = method;
 
     public string Run(bool runExample)
     {
         var args = new string[] { GetInput(Year, Day, runExample) };
-        var result = (string?)Method.Invoke(null, args) ??
-            throw new Exception("Solution returned null, which is not legal");
+        var result = Method.Invoke(null, args)?.ToString()
+                     ?? throw new Exception("Solution returned null, which is not legal");
         return result;
     }
 
