@@ -8,29 +8,11 @@ namespace AdventOfCode.Y2023;
 [Solution(Year = 2023, Day = 1)]
 public class Day1
 {
-    public static int GetCalibrationValue1(string line)
-    {
-        if (line == string.Empty) return 0;
-
-        var digits = line.ToArray().Where(char.IsDigit);
-        return int.Parse(new string([digits.First(), digits.Last()]));
-    }
-
-    [Part(1)]
-    public static int SolvePartOne(string input)
-    {
-        return input.Split(Environment.NewLine)
-                    .Select(GetCalibrationValue1)
-                    .Sum();
-    }
-
-    public static int GetCalibrationValue2(string line)
-    {
-        var spelledDigits = new Dictionary<string, char>()
+    private static readonly Dictionary<string, char> _spelledDigits = new()
         {
             {"one", '1'},
             {"two", '2'},
-            {"tree", '3'},
+            {"three", '3'},
             {"four", '4'},
             {"five", '5'},
             {"six", '6'},
@@ -39,46 +21,50 @@ public class Day1
             {"nine", '9'}
         };
 
-        var digits = string.Empty;
-        var possibleDigits = spelledDigits.Keys.ToList();
-        var currSearchTerm = string.Empty;
-        foreach (var chr in line.ToArray())
+    public static int GetCalibrationValue(string line, bool allowSpelledOutDigits = false)
+    {
+        var digits = new List<char>();
+        for (var i = 0; i < line.Length; i++)
         {
-            if (char.IsDigit(chr))
+            if (char.IsDigit(line[i]))
             {
-                digits = string.Concat(digits, chr);
-                currSearchTerm = string.Empty;
-                possibleDigits = [.. spelledDigits.Keys];
+                digits.Add(line[i]);
                 continue;
             }
 
-            currSearchTerm = string.Concat(currSearchTerm, chr);
-            foreach (var possibleDigit in possibleDigits)
-            {
-                if (possibleDigit[..currSearchTerm.Length] != currSearchTerm)
-                {
-                    possibleDigits.Remove(possibleDigit);
-                    continue;
-                }
+            if (!allowSpelledOutDigits) continue;
 
-                if (possibleDigit.Length == currSearchTerm.Length)
-                {
-                    digits = string.Concat(digits, spelledDigits[currSearchTerm]);
-                    currSearchTerm = string.Empty;
-                    possibleDigits = [.. spelledDigits.Keys];
-                    break;
-                }
-            }
+            var spelledDigit = _spelledDigits.Keys.ToArray()
+                .Where(digit => digit.Length < line.Length - i + 1)
+                .Where(digit => digit == line.Substring(i, digit.Length))
+                .Select(digit => _spelledDigits[digit]);
+
+            digits.AddRange(spelledDigit);
         }
 
+        if (digits.Count == 0) return 0;
+
         return int.Parse(new string([digits.First(), digits.Last()]));
+    }
+
+    private static int Solve(string input, Func<string, int> calculateCalibrationValue)
+    {
+        return input.Split(Environment.NewLine)
+            .Where(line => line != string.Empty)
+            .Select(calculateCalibrationValue)
+            .Sum();
+    }
+
+
+    [Part(1)]
+    public static int SolvePartOne(string input)
+    {
+        return Solve(input, line => GetCalibrationValue(line));
     }
 
     [Part(2)]
     public static int SolvePartTwo(string input)
     {
-        return input.Split(Environment.NewLine)
-                    .Select(GetCalibrationValue2)
-                    .Sum();
+        return Solve(input, line => GetCalibrationValue(line, true));
     }
 }
