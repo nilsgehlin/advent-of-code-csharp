@@ -23,7 +23,7 @@ public partial class Day3
             .Where(line => line != string.Empty);
 
         return lines
-            .SelectMany((line, idx) => NumbersRegex().Matches(line).Select(match => (match, idx)))
+            .GetMatchesAndIndicies(NumbersRegex)
             .Select(matchAndIdx => new Number(int.Parse(matchAndIdx.match.Value),
                                               matchAndIdx.idx,
                                               new Range(matchAndIdx.match.Index, matchAndIdx.match.Index + matchAndIdx.match.Value.Length - 1)))
@@ -55,18 +55,19 @@ public partial class Day3
             .Where(line => line != string.Empty);
 
         var numbers = lines
-            .SelectMany((line, idx) => NumbersRegex().Matches(line).Select(match => (match, idx)))
+            .GetMatchesAndIndicies(NumbersRegex)
             .Select(matchAndIdx => new Number(int.Parse(matchAndIdx.match.Value),
                                               matchAndIdx.idx,
                                               new Range(matchAndIdx.match.Index, matchAndIdx.match.Index + matchAndIdx.match.Value.Length - 1)));
 
         return lines
-            .SelectMany((line, idx) => SymbolsRegex().Matches(line).Select(match => (match, idx)))
+            .GetMatchesAndIndicies(SymbolsRegex)
             .Select(matchAndIdx => new Symbol(matchAndIdx.match.Value, matchAndIdx.idx, matchAndIdx.match.Index))
             .Select(symbol => ToGear(symbol, numbers))
             .Sum(gear => (gear is null) ? 0 : gear.FirstNumber * gear.SecondNumber);
 
     }
+
 
     private static Gear? ToGear(Symbol symbol, IEnumerable<Number> numbers)
     {
@@ -99,3 +100,8 @@ public partial class Day3
     private static partial Regex NumbersRegex();
 }
 
+internal static class Extensions
+{
+    public static IEnumerable<(Match match, int idx)> GetMatchesAndIndicies(this IEnumerable<string> lines, Func<Regex> regexMethod) =>
+        lines.SelectMany((line, idx) => regexMethod().Matches(line).Select(match => (match, idx)));
+}
