@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -8,6 +9,8 @@ namespace AdventOfCode.Y2023;
 
 public record Range(int Lower, int Upper);
 public record Number(int Value, int RowIdx, Range ColumnIdxRange);
+public record Symbol(string Value, int RowIdx, int ColumnIdx);
+public record Gear(int FirstNumber, int SecondNumber);
 
 [Solution(Year = 2023, Day = 3)]
 public partial class Day3
@@ -46,8 +49,48 @@ public partial class Day3
     }
 
     [Part(2)]
-    public static int SolvePartTwo(string input) =>
-        0;
+    public static int SolvePartTwo(string input)
+    {
+        var lines = input.Split(Environment.NewLine)
+            .Where(line => line != string.Empty);
+
+        var numbers = lines
+            .SelectMany((line, idx) => NumbersRegex().Matches(line).Select(match => (match, idx)))
+            .Select(matchAndIdx => new Number(int.Parse(matchAndIdx.match.Value),
+                                              matchAndIdx.idx,
+                                              new Range(matchAndIdx.match.Index, matchAndIdx.match.Index + matchAndIdx.match.Value.Length - 1)));
+
+        return lines
+            .SelectMany((line, idx) => SymbolsRegex().Matches(line).Select(match => (match, idx)))
+            .Select(matchAndIdx => new Symbol(matchAndIdx.match.Value, matchAndIdx.idx, matchAndIdx.match.Index))
+            .Select(symbol => ToGear(symbol, numbers))
+            .Sum(gear => (gear is null) ? 0 : gear.FirstNumber * gear.SecondNumber);
+
+    }
+
+    private static Gear? ToGear(Symbol symbol, IEnumerable<Number> numbers)
+    {
+        if (symbol.Value != "*") return null;
+
+        var neighbours = numbers.Where(number => IsNeighbour(symbol, number));
+        if (neighbours.Count() != 2) return null;
+
+        return new Gear(neighbours.ElementAt(0).Value, neighbours.ElementAt(1).Value);
+    }
+
+    private static bool IsNeighbour(Symbol symbol, Number number)
+    {
+        for (var i = symbol.RowIdx - 1; i <= symbol.RowIdx + 1; i++)
+        {
+            if (number.RowIdx != i) continue;
+
+            for (var j = symbol.ColumnIdx - 1; j <= symbol.ColumnIdx + 1; j++)
+            {
+                if (j >= number.ColumnIdxRange.Lower && j <= number.ColumnIdxRange.Upper) return true;
+            }
+        }
+        return false;
+    }
 
     [GeneratedRegex(@"[^\d.\s]")]
     private static partial Regex SymbolsRegex();
